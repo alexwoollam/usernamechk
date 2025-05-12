@@ -1,0 +1,7 @@
+_OLD
+.env
+*/.env
+*/logs
+
+*/node_modules
+*/vendor

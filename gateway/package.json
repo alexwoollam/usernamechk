@@ -1,0 +1,23 @@
+{
+  "name": "ecco",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "amqplib": "^0.10.8",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5",
+    "pg": "^8.15.6",
+    "redis": "^5.0.1",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0"
+  }
+}

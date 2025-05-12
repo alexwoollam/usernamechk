@@ -1,0 +1,112 @@
+services:
+  gateway:
+    build:
+      context: ./gateway
+    ports:
+      - "8080:3000"
+    depends_on:
+      - redis
+      - outbox-inbox
+    environment:
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      OUTBOX_HOST: outbox-inbox
+      OUTBOX_USER: user
+      OUTBOX_PASS: pass
+      OUTBOX_NAME: usernames
+    networks:
+      - backend
+
+  relay:
+    build:
+      context: ./message-relay
+    depends_on:
+      - gateway
+      - outbox-inbox
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      OUTBOX_HOST: outbox-inbox
+      OUTBOX_USER: user
+      OUTBOX_PASS: pass
+      OUTBOX_NAME: usernames
+    networks:
+      - backend    
+
+  outbox-inbox:
+    image: postgres:16
+    ports:
+      - "5488:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: usernames
+    volumes:
+      - oipgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  username-checker:
+    build:
+      context: ./username-checker
+    depends_on:
+      - rabbitmq
+      - username-registry
+      - redis
+    environment:
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      DB_HOST: username-registry
+    networks:
+      - backend
+
+  username-suggester:
+    build:
+      context: ./username-suggester
+    ports:
+      - "8088:80"
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOST: redis
+    networks:
+      - backend    
+
+  username-registry:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: usernames
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  redis:
+    image: redis/redis-stack:latest
+    restart: always
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    networks:
+      - backend
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+  oipgdata:
+
+networks:
+  backend:
+    driver: bridge
