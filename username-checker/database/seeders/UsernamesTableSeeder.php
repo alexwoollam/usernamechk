@@ -14,7 +14,8 @@ class UsernamesTableSeeder extends Seeder
     public function run(): void
     {
         Username::create([
-            'username' => 'alexjames'
+            'username' => 'AlexJames',
+            'username_lower' => 'alexjames'
         ]);
     }
 }

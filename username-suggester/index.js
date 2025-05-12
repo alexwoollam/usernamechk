@@ -62,7 +62,7 @@ const startServer = async () => {
       }
 
       try {
-        const cached = await client.get(`username:${username}:alternatives`);
+        const cached = await client.get(`username:${username.toLowerCase()}:alternatives`);
         if (cached) {
           return res.status(200).send({
             username,
@@ -73,7 +73,7 @@ const startServer = async () => {
 
         const alternatives = await generateAlternativeUsernames(username);
 
-        await client.setEx(`username:${username}:alternatives`, 3600, JSON.stringify(alternatives));
+        await client.setEx(`username:${username.toLowerCase()}:alternatives`, 3600, JSON.stringify(alternatives));
 
         return res.status(200).send({
           username,

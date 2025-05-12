@@ -1,10 +1,12 @@
 import express from 'express'
 import { saveToOutbox } from '../services/outboxService.js';
 import {pool} from '../services/dbConnection.js'
+import sanitizeInput from '../middleware/sanitizeInput.js';
+import { validateUsername } from '../services/usernameValidationService.js'; // Import the validation function
 
 const router = express.Router()
 
-router.post('/username-check', async (req, res) => {
+router.post('/username-check', sanitizeInput, async (req, res) => {
 
   const { username } = req.body
 
@@ -13,6 +15,9 @@ router.post('/username-check', async (req, res) => {
   }
 
   try {
+
+    validateUsername(username);
+
     const correlationId = await saveToOutbox('username.check.requested', { username });
     const timeout = 5000
     const pollInterval = 250
@@ -34,7 +39,7 @@ router.post('/username-check', async (req, res) => {
     return res.status(504).json({ error: 'Timeout waiting for username check result' })
   } catch (err) {
     console.error(err)
-    res.status(500).json({ error: 'Username check failed' })
+    res.status(500).json({ error: 'Username check failed', message: err.message || 'An unknown error occurred' })
   }
 })
 

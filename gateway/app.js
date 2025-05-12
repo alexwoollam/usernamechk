@@ -1,5 +1,4 @@
 import express from 'express';
-import setupProxy from './services/proxyHandler.js';
 import logger from './services/logger.js';
 import eventRoutes from './routes/eventRoutes.js'
 import { cacheMiddleware } from './middleware/cache.js';
@@ -12,8 +11,6 @@ app.use(express.json());
 app.use(cacheMiddleware(60));
 
 await initDb();
-
-setupProxy(app, routes);
 
 app.use(eventRoutes)
 

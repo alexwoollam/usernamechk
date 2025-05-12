@@ -30,6 +30,8 @@ final class ConsumeUsernameCheck extends Command
         $callback = function (AMQPMessage $msg) use ($service, $channel) {
             $data = json_decode($msg->getBody(), true);
             $username = $data['username'];
+            $username_lowercase = strtolower($data['username']);
+            
 
             \Log::info('Username check requested', ['username' => $username]);
             \Log::info('Replying to', [
@@ -41,24 +43,24 @@ final class ConsumeUsernameCheck extends Command
                 return;
             }
 
-            if ($service->existsInBloom($username)) {
+            if ($service->existsInBloom($username_lowercase)) {
                 $suggestions = $this->getUsernameSuggestions($username);
                 $this->emitReply($channel, $msg, false, $username, 'existsInBloom', $suggestions);
-                $service->cacheResult($username, true);
+                $service->cacheResult($username_lowercase, true);
                 return;
             }
 
-            if ($service->existsInCache($username)) {
-                $this->emitReply($channel, $msg, !$service->existsInCache($username), $username, 'existsInCache');
+            if ($service->existsInCache($username_lowercase)) {
+                $this->emitReply($channel, $msg, !$service->existsInCache($username_lowercase), $username, 'existsInCache');
                 return;
             }
 
-            $exists = Username::where('username', $username)->exists();
+            $exists = Username::where('username_lower', $username_lowercase)->exists();
 
             if ($exists) {
-                $service->addToBloom($username);
+                $service->addToBloom($username_lowercase);
                 $suggestions = $this->getUsernameSuggestions($username);
-                $service->cacheResult($username, false);
+                $service->cacheResult($username_lowercase, false);
                 $this->emitReply($channel, $msg, false, $username, 'existsInDB', $suggestions);
             } else {
                 $service->cacheResult($username, true);
