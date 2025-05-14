@@ -43,4 +43,43 @@ router.post('/username-check', sanitizeInput, async (req, res) => {
   }
 })
 
+function isValidAvatar(avatar) {
+  const requiredLayers = ['hand', 'horn', 'mouth', 'ear', 'eye', 'skin', 'leg', 'tail']
+  return requiredLayers.every(layer => Number.isInteger(avatar[layer]) && avatar[layer] > 0)
+}
+
+router.post('/user-avatar', async (req, res) => {
+  const { avatar, colorScheme } = req.body
+
+  if (!avatar || !isValidAvatar(avatar)) {
+    return res.status(400).json({ error: 'Valid avatar data is required' })
+  }
+
+  try {
+    const correlationId = await saveToOutbox('avatar.creation.requested', { avatar, colorScheme })
+
+    const timeout = 5000
+    const pollInterval = 250
+    const start = Date.now()
+
+    while (Date.now() - start < timeout) {
+      const result = await pool.query(
+        'SELECT payload FROM inbox WHERE id = $1',
+        [correlationId]
+      )
+
+      if (result.rows.length > 0) {
+        return res.json(result.rows[0].payload)
+      }
+
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+    }
+
+    return res.status(504).json({ error: 'Timeout waiting for avatar creation result' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Avatar creation failed', message: err.message || 'An unknown error occurred' })
+  }
+})
+
 export default router

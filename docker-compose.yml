@@ -103,9 +103,39 @@ services:
     networks:
       - backend
 
+  avatar-maker:
+    build:
+      context: ./avatar-maker
+    depends_on:
+      - image-storage
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      MINIO_ACCESS_KEY: R6dRcQ6skM7WVLJ5vSpr
+      MINIO_PORT: 9000
+      MINIO_SECRET_KEY: eyleCAZPJNNfK63Xhvaa25zCYyK9EznClNNA1hpt
+      MINIO_ENDPOINT: image-storage
+      MINIO_BUCKET: avatar
+    networks:
+      - backend    
+
+  image-storage:
+    image: minio/minio
+    command: server -C /etc/minio --address ":9000" --console-address ":9001" /data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - storage:/data
+    networks:
+      - backend
+
 volumes:
   pgdata:
   oipgdata:
+  storage:
 
 networks:
   backend:
