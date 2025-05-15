@@ -5,6 +5,8 @@ export const saveToOutbox = async (topic, payload, sent = false) => {
 
   const id = uuidv4();
 
+  console.log('payload', payload);
+
   const query = `
     INSERT INTO outbox (id, topic, payload, sent, sent_datetime)
     VALUES ($1, $2, $3, $4, $5)

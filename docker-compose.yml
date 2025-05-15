@@ -33,6 +33,19 @@ services:
     networks:
       - backend    
 
+  cleanup:
+    build:
+      context: ./cleanup-service
+    depends_on:
+      - outbox-inbox
+    environment:
+      OUTBOX_HOST: outbox-inbox
+      OUTBOX_USER: user
+      OUTBOX_PASS: pass
+      OUTBOX_NAME: usernames
+    networks:
+      - backend
+
   outbox-inbox:
     image: postgres:16
     ports:
@@ -80,6 +93,32 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: usernames
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  parent-service:
+    build:
+      context: ./parent-service
+    depends_on:
+      - rabbitmq
+      - parent-registry
+      - redis
+    environment:
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      DB_HOST: parent-registry
+    networks:
+      - backend
+
+  parent-registry:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: parents
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:

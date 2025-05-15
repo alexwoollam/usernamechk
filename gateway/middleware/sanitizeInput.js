@@ -1,15 +1,19 @@
 const sanitizeInput = (req, res, next) => {
-  for (let key in req.body) {
-    if (req.body.hasOwnProperty(key)) {
-      const value = req.body[key];
+  for (const key in req.body) {
+    if (!Object.prototype.hasOwnProperty.call(req.body, key)) continue
 
-      if (typeof value === 'string') {
-        req.body[key] = value.replace(/[^a-zA-Z0-9]/g, '');
-      }
+    const value = req.body[key]
+
+    if (typeof value !== 'string') continue
+
+    if (key.toLowerCase() === 'email') {
+      req.body[key] = value.trim()
+    } else {
+      req.body[key] = value.replace(/[^a-zA-Z0-9]/g, '')
     }
   }
 
-  next();
-};
+  next()
+}
 
-export default sanitizeInput;
+export default sanitizeInput
