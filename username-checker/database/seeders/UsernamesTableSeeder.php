@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 use App\Models\Username;
+use Faker\Factory as Faker;
 
 class UsernamesTableSeeder extends Seeder
 {
@@ -12,41 +13,56 @@ class UsernamesTableSeeder extends Seeder
     {
         $path = database_path('data/usernames.txt');
 
-        if (!File::exists($path)) {
-            throw new \Exception('Username list file not found.');
-        }
+        $usernames = [];
 
-        $handle = fopen($path, 'r');
+        if (File::exists($path)) {
+            $handle = fopen($path, 'r');
 
-        if (!$handle) {
-            throw new \Exception('Unable to open the usernames file.');
+            if (!$handle) {
+                throw new \Exception('Unable to open the usernames file.');
+            }
+
+            while (($line = fgets($handle)) !== false) {
+                $name = trim($line);
+
+                if ($name !== '' && strtolower($name) !== 'null') {
+                    $usernames[] = $name;
+                }
+            }
+
+            fclose($handle);
+        } else {
+            \Log::notice('Username list file not found, fallback to minilist.');
+
+            $faker = Faker::create();
+
+            $usernames = [
+                'alexjames',
+                'admin',
+            ];
+
+            for ($i = 0; $i < 8; $i++) {
+                $usernames[] = $faker->userName();
+            }
         }
 
         $count = 0;
 
-       while (($line = fgets($handle)) !== false) {
-            $name = trim($line);
+        foreach ($usernames as $name) {
+            try {
+                Username::create([
+                    'username' => $name,
+                    'username_lower' => strtolower($name)
+                ]);
+                $count++;
 
-            if ($name !== '' && strtolower($name) !== 'null') {
-                try {
-                    Username::create([
-                        'username' => $name,
-                        'username_lower' => strtolower($name)
-                    ]);
-                    $count++;
-
-                    if ($count % 1000 === 0) {
-                        echo 'Inserted: ' . $count . PHP_EOL;
-                    }
-                } catch (\Exception $e) {
-                    // Duplicate or other DB error, skip it
-                    continue;
+                if ($count % 1000 === 0) {
+                    echo 'Inserted: ' . $count . PHP_EOL;
                 }
+            } catch (\Exception $e) {
+                continue;
             }
         }
-
-
-        fclose($handle);
 
         echo 'Total inserted: ' . $count . PHP_EOL;
     }
